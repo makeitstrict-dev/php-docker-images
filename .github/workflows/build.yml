@@ -1,13 +1,97 @@
-name: learn-github-actions
-run-name: ${{ github.actor }} is learning GitHub Actions
-on: [push]
+on:
+    push: 
+        branches: 
+            -
+                main
+    pull_request:
+env:
+    IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/php
 jobs:
-  check-bats-version:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm install -g bats
-      - run: bats -v
+    build-base:
+        env:
+            IMAGE_TAG: ${{ matrix.version}}-base-${{ matrix.variant }}
+        strategy:
+            matrix:
+                version: [ '8.0', '8.1', '8.2', '8.3' ]
+                variant: [ fpm-alpine, cli-alpine ]
+        name: Build base image
+        runs-on: ubuntu-latest
+        steps:
+            -
+                name: Checkout
+                uses: actions/checkout@v4
+            -
+                name: Docker meta
+                id: meta
+                uses: docker/metadata-action@v5
+                with:
+                    images: |
+                        name=${{ env.IMAGE_NAME }}
+                    tags: |
+                        type=raw,value=${{ env.IMAGE_TAG }}
+                        type=edge,prefix=${{ env.IMAGE_TAG }}-,branch=$repo.default_branch
+            -
+                name: Login to GitHub Container Registry
+                uses: docker/login-action@v3
+                with:
+                    registry: ghcr.io
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.GITHUB_TOKEN }}
+            -
+                name: Build and push
+                uses: docker/build-push-action@v5
+                with:
+                    context: .
+                    file: Dockerfile.base
+                    pull: true
+                    push: ${{ github.event_name == 'push' }}
+                    build-args: |
+                        PHP_VERSION=${{ matrix.version }}-${{ matrix.variant }}
+                    tags: ${{ steps.meta.outputs.tags }}
+                    labels: ${{ steps.meta.outputs.labels }}
+    build-images:
+        env:
+            IMAGE_TAG: ${{ matrix.version}}-base-${{ matrix.variant }}
+        strategy:
+            matrix:
+                version: [ '8.0', '8.1', '8.2', '8.3' ]
+                variant: [ fpm-alpine, cli-alpine ]
+                environment: [ ci, dev, prod ]
+        name: Build images
+        needs: build-base
+        runs-on: ubuntu-latest
+        steps:
+            -
+                name: Checkout
+                uses: actions/checkout@v4
+            -
+                name: Docker meta
+                id: meta
+                uses: docker/metadata-action@v5
+                with:
+                    images: |
+                        name=${{ env.IMAGE_NAME }}
+                    tags: |
+                        type=raw,value=${{ env.IMAGE_TAG }}
+                        type=edge,prefix=${{ env.IMAGE_TAG }}-,branch=$repo.default_branch
+            -
+                name: Login to GitHub Container Registry
+                uses: docker/login-action@v3
+                with:
+                    registry: ghcr.io
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.GITHUB_TOKEN }}
+            -
+                name: Build and push
+                uses: docker/build-push-action@v5
+                if: ${{ github.event_name == 'push' }}
+                with:
+                    context: .
+                    file: Dockerfile.${{ matrix.environment }}
+                    pull: true
+                    push: true
+                    build-args: |
+                        IMAGE_URL=${{ env.IMAGE_NAME }}
+                        IMAGE_TAG=${{ matrix.version }}-base-${{ matrix.variant }}
+                    tags: ${{ steps.meta.outputs.tags }}
+                    labels: ${{ steps.meta.outputs.labels }}

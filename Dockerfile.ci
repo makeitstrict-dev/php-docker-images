@@ -1,0 +1,16 @@
+ARG IMAGE_URL
+ARG IMAGE_TAG
+
+FROM ${IMAGE_URL}:${IMAGE_TAG}
+
+COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN install-php-extensions \
+        xdebug && \
+    rm /usr/local/bin/install-php-extensions && \
+    echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/99-xdebug.ini && \
+    echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/99-xdebug.ini && \
+    echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/99-xdebug.ini
+
+ENV XDEBUG_CONFIG="mode=debug" \
+    PHP_IDE_CONFIG="serverName=docker-dev"
