@@ -12,11 +12,12 @@ env:
 jobs:
     build-base:
         env:
-            IMAGE_TAG: ${{ matrix.version}}-base-${{ matrix.variant }}
+            IMAGE_TAG: ${{ matrix.version}}-${{ matrix.environment }}-${{ matrix.variant }}
         strategy:
             matrix:
                 version: [ '8.0', '8.1', '8.2', '8.3' ]
                 variant: [ fpm-alpine, cli-alpine ]
+                environment: [ base ]
         name: Build base image
         runs-on: ubuntu-latest
         steps:
@@ -54,7 +55,7 @@ jobs:
                     labels: ${{ steps.meta.outputs.labels }}
     build-images:
         env:
-            IMAGE_TAG: ${{ matrix.version}}-base-${{ matrix.variant }}
+            IMAGE_TAG: ${{ matrix.version}}-${{ matrix.environment }}-${{ matrix.variant }}
         strategy:
             matrix:
                 version: [ '8.0', '8.1', '8.2', '8.3' ]
