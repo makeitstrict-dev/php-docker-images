@@ -19,7 +19,6 @@ RUN install-php-extensions \
         pcntl && \
     rm /usr/local/bin/install-php-extensions && \
     mkdir -p /workspace/ && \
-    chown -R $USER:$USER /workspace && \
     mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
 WORKDIR /workspace/app
