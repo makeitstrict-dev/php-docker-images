@@ -1,7 +1,6 @@
 ARG PHP_VERSION
-ARG PHP_FLAVOR
 
-FROM php:${PHP_VERSION}-${PHP_FLAVOR}
+FROM php:${PHP_VERSION}
 
 COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
 
