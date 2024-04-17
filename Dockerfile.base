@@ -14,7 +14,6 @@ RUN install-php-extensions \
         opcache \
         pdo_mysql \
         sockets \
-        imagick \
         rdkafka-6.0.3 \
         pcntl && \
     rm /usr/local/bin/install-php-extensions && \
